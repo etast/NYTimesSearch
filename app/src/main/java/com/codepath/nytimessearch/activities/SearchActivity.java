@@ -1,16 +1,14 @@
 package com.codepath.nytimessearch.activities;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.GridView;
 
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.adapter.ArticleAdapter;
@@ -28,7 +26,7 @@ import java.util.ArrayList;
 import cz.msebera.android.httpclient.Header;
 
 public class SearchActivity extends AppCompatActivity {
-    GridView gvResults;
+    RecyclerView rvResults;
 
     ArrayList<Article> articles;
     ArticleAdapter adapter;
@@ -45,11 +43,15 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     public void setupViews() {
-        gvResults = (GridView) findViewById(R.id.gvResults);
+        rvResults = (RecyclerView) findViewById(R.id.rvResults);
         articles = new ArrayList<>();
         adapter = new ArticleAdapter(this, articles);
-        gvResults.setAdapter(adapter);
-        gvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        rvResults.setAdapter(adapter);
+        StaggeredGridLayoutManager gridLayoutManager =
+                new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+        rvResults.setLayoutManager(gridLayoutManager);
+        /*
+        rvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
@@ -58,6 +60,7 @@ public class SearchActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+        */
     }
 
     @Override
@@ -79,9 +82,12 @@ public class SearchActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                         JSONArray articleJsonResults = null;
+                        articles.clear();
                         try {
                             articleJsonResults = response.getJSONObject("response").getJSONArray("docs");
-                            adapter.addAll(Article.fromJSONArray(articleJsonResults));
+                            articles.addAll(Article.fromJSONArray(articleJsonResults));
+                            adapter.notifyItemInserted(articles.size() - 1);
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }

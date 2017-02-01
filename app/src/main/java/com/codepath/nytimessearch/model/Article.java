@@ -12,33 +12,33 @@ import java.util.ArrayList;
  */
 
 public class Article implements Serializable {
-    private String webUrl;
+    private String mWebUrl;
+    private String mHeadline;
+    private String mThumbnail;
 
     public String getWebUrl() {
-        return webUrl;
+        return mWebUrl;
     }
 
     public String getHeadline() {
-        return headline;
+        return mHeadline;
     }
 
     public String getThumbnail() {
-        return thumbnail;
+        return mThumbnail;
     }
 
-    private String headline;
-    private String thumbnail;
 
     public Article(JSONObject articleJson) throws JSONException {
         try {
-            this.headline = articleJson.getJSONObject("headline").optString("main", "name");
-            this.webUrl = articleJson.getString("web_url");
+            mHeadline = articleJson.getJSONObject("headline").optString("main", "name");
+            mWebUrl = articleJson.getString("web_url");
             JSONArray multimedia = articleJson.getJSONArray("multimedia");
             if (multimedia != null && multimedia.length() > 0) {
                 JSONObject multimediaFirst = multimedia.getJSONObject(0);
-                this.thumbnail = "http://www.nytimes.com/" + multimediaFirst.optString("url");
+                mThumbnail = "http://www.nytimes.com/" + multimediaFirst.optString("url");
             } else {
-                this.thumbnail = "";
+                mThumbnail = "";
             }
 
         } catch (JSONException e) {

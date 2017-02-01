@@ -13,11 +13,8 @@
     tools:context="com.codepath.nytimessearch.activities.SearchActivity"
     tools:showIn="@layout/activity_search">
 
-    <GridView
+    <android.support.v7.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/etQuery"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/gvResults"
-        android:numColumns="2" />
+        android:id="@+id/rvResults" />
 </RelativeLayout>

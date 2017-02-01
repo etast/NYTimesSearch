@@ -1,18 +1,17 @@
 package com.codepath.nytimessearch.adapter;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.model.Article;
-import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -20,31 +19,67 @@ import java.util.List;
  * Created by etast on 1/30/17.
  */
 
-public class ArticleAdapter extends ArrayAdapter<Article> {
+public class ArticleAdapter extends
+        RecyclerView.Adapter<ArticleAdapter.ViewHolder> {
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        public TextView tvTitle;
+        public ImageView ivImage;
+
+        public ViewHolder(View itemView) {
+            super(itemView);
+
+            tvTitle = (TextView) itemView.findViewById(R.id.tvTitle);
+            ivImage = (ImageView) itemView.findViewById(R.id.ivImage);
+        }
+    }
+    private List<Article> mArticles;
+    private Context mContext;
+
     public ArticleAdapter(Context context, List<Article> articles) {
-        super(context, android.R.layout.simple_list_item_1, articles);
+        mArticles = articles;
+        mContext = context;
     }
 
-    @NonNull
+    private Context getContext() {
+        return mContext;
+    }
+
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        Article article = this.getItem(position);
+    public ArticleAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        Context context = parent.getContext();
+        LayoutInflater inflater = LayoutInflater.from(context);
 
-        if (convertView == null) {
-            LayoutInflater inflater = LayoutInflater.from(getContext());
-            convertView = inflater.inflate(R.layout.item_article_result, parent, false);
-        }
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.ivImage);
-        imageView.setImageResource(0);
+        // Inflate the custom layout
+        View articleView = inflater.inflate(R.layout.item_article_result, parent, false);
 
-        TextView tvTitle = (TextView) convertView.findViewById(R.id.tvTitle);
+        // Return a new holder instance
+        ViewHolder viewHolder = new ViewHolder(articleView);
+        return viewHolder;
+    }
+
+    // Involves populating data into the item through holder
+    @Override
+    public void onBindViewHolder(ArticleAdapter.ViewHolder viewHolder, int position) {
+        // Get the data model based on position
+        Article article = mArticles.get(position);
+
+        // Set item views based on your views and data model
+        TextView tvTitle = viewHolder.tvTitle;
         tvTitle.setText(article.getHeadline());
-
+        ImageView ivImage = viewHolder.ivImage;
+        ivImage.setImageResource(0);
         String thumbnail = article.getThumbnail();
 
         if(!TextUtils.isEmpty(thumbnail)) {
-            Picasso.with(getContext()).load(thumbnail).into(imageView);
+            Glide.with(mContext).load(thumbnail).into(ivImage);
         }
-        return convertView;
+    }
+
+    // Returns the total count of items in the list
+    @Override
+    public int getItemCount() {
+        return mArticles.size();
     }
 }
+
