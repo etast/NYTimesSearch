@@ -51,8 +51,8 @@ public class ArticleAdapter extends
         LayoutInflater inflater = LayoutInflater.from(context);
 
         // Inflate the custom layout
-        View articleView = inflater.inflate(R.layout.item_article_result, parent, false);
-
+        final View articleView = inflater.inflate(R.layout.item_article_result, parent, false);
+        
         // Return a new holder instance
         ViewHolder viewHolder = new ViewHolder(articleView);
         return viewHolder;

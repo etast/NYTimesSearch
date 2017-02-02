@@ -1,5 +1,6 @@
 package com.codepath.nytimessearch.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
@@ -11,8 +12,10 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.codepath.nytimessearch.EndlessRecyclerViewScrollListener;
+import com.codepath.nytimessearch.ItemClickSupport;
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.adapter.ArticleAdapter;
 import com.codepath.nytimessearch.model.Article;
@@ -68,6 +71,15 @@ public class SearchActivity extends AppCompatActivity {
             }
         };
         rvResults.addOnScrollListener(scrollListener);
+        ItemClickSupport.addTo(rvResults).setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
+            @Override
+            public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+                Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
+                Article article = articles.get(position);
+                i.putExtra("article", article);
+                startActivity(i);
+            }
+        });
         /*
         rvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
