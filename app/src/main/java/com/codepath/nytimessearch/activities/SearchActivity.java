@@ -1,15 +1,18 @@
 package com.codepath.nytimessearch.activities;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.codepath.nytimessearch.EndlessRecyclerViewScrollListener;
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.adapter.ArticleAdapter;
 import com.codepath.nytimessearch.model.Article;
@@ -30,8 +33,13 @@ public class SearchActivity extends AppCompatActivity {
 
     ArrayList<Article> articles;
     ArticleAdapter adapter;
+    Handler handler;
+    AsyncHttpClient client;
 
     final String URL = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
+    private EndlessRecyclerViewScrollListener scrollListener;
+    private Integer page = 0;
+    private String currentQuery;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +47,8 @@ public class SearchActivity extends AppCompatActivity {
         setContentView(R.layout.activity_search);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        handler = new Handler();
+        client = new AsyncHttpClient();
         setupViews();
     }
 
@@ -48,8 +58,16 @@ public class SearchActivity extends AppCompatActivity {
         adapter = new ArticleAdapter(this, articles);
         rvResults.setAdapter(adapter);
         StaggeredGridLayoutManager gridLayoutManager =
-                new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+                new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);
         rvResults.setLayoutManager(gridLayoutManager);
+        scrollListener = new EndlessRecyclerViewScrollListener(gridLayoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                Log.d("onLoadMore", String.format("%d", page));
+                handler.postDelayed(loadDataFromApi, 1000);
+            }
+        };
+        rvResults.addOnScrollListener(scrollListener);
         /*
         rvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -62,6 +80,40 @@ public class SearchActivity extends AppCompatActivity {
         });
         */
     }
+    public Runnable loadDataFromApi = new Runnable() {
+        @Override
+        public void run() {
+            Log.d("page: ", page.toString());
+            Log.d("currentQuery: ", currentQuery);
+            RequestParams params = new RequestParams();
+            params.put("api-key", "ab9c232decde4a36a49426f2bdcd4c16");
+            params.put("page", page.toString());
+            params.put("q", currentQuery);
+            client.get(URL, params, new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    JSONArray articleJsonResults = null;
+                    try {
+                        int currentSize = adapter.getItemCount();
+                        Log.d("CurrentSize", String.format("%d", currentSize));
+                        articleJsonResults = response.getJSONObject("response").getJSONArray("docs");
+                        Log.d("added: ", String.format("%d", articleJsonResults.length()));
+                        articles.addAll(Article.fromJSONArray(articleJsonResults));
+                        adapter.notifyItemRangeInserted(currentSize, articles.size() - 1);
+                        page++;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    Log.d("StatusCode: ", String.format("%d", statusCode));
+                    Log.d("DEBUG: ", errorResponse.toString());
+                }
+            });
+        }
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -73,26 +125,12 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 searchView.clearFocus();
-                AsyncHttpClient client = new AsyncHttpClient();
-                RequestParams params = new RequestParams();
-                params.put("api-key", "ab9c232decde4a36a49426f2bdcd4c16");
-                params.put("page", 0);
-                params.put("q", query);
-                client.get(URL, params, new JsonHttpResponseHandler() {
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                        JSONArray articleJsonResults = null;
-                        articles.clear();
-                        try {
-                            articleJsonResults = response.getJSONObject("response").getJSONArray("docs");
-                            articles.addAll(Article.fromJSONArray(articleJsonResults));
-                            adapter.notifyItemInserted(articles.size() - 1);
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+                articles.clear();
+                adapter.notifyDataSetChanged();
+                scrollListener.resetState();
+                currentQuery = query;
+                page = 0;
+                handler.postDelayed(loadDataFromApi, 150);
                 return true;
             }
 
@@ -116,7 +154,7 @@ public class SearchActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
-        return super.onOptionsItemSelected(item);
+        return true;
+//        return super.onOptionsItemSelected(item);
     }
 }
