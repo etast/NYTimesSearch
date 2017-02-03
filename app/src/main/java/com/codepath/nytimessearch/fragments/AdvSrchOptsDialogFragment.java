@@ -8,11 +8,13 @@ import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.model.SearchSettings;
@@ -25,7 +27,7 @@ import java.util.Calendar;
  */
 
 public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePickerDialog.OnDateSetListener {
-    private Button mBtnSave;
+    // private Button mBtnSave;
     private CheckBox mCbArts;
     private CheckBox mCbFashion;
     private CheckBox mCbSports;
@@ -48,6 +50,7 @@ public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePic
 
     public static AdvSrchOptsDialogFragment newInstance(Parcelable settings) {
         AdvSrchOptsDialogFragment frag = new AdvSrchOptsDialogFragment();
+        frag.setStyle(DialogFragment.STYLE_NORMAL, R.style.Dialog_FullScreen);
         Bundle args = new Bundle();
         args.putParcelable("settings", settings);
         frag.setArguments(args);
@@ -65,13 +68,16 @@ public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePic
         super.onViewCreated(view, savedInstanceState);
         hasCalendarChanged = false;
         settings = getArguments().getParcelable("settings");
-        mBtnSave = (Button) view.findViewById(R.id.btnSave);
+        Button btnSave = (Button) view.findViewById(R.id.btnSave);
+        Button btnDismiss = (Button) view.findViewById(R.id.btnDismiss);
         mCbArts = (CheckBox) view.findViewById(R.id.cbArts);
         mCbFashion = (CheckBox) view.findViewById(R.id.cbFashion);
         mCbSports = (CheckBox) view.findViewById(R.id.cbSports);
         mEtBeginDate = (EditText)view.findViewById(R.id.etBeginDate);
         mSimpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
+        mSortOrder = (Spinner) view.findViewById(R.id.sortOrder);
         mCalendar = Calendar.getInstance();
+        setSpinner();
         if (settings.isArtsFilterOn()) {
             mCbArts.setChecked(true);
         }
@@ -90,7 +96,7 @@ public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePic
         if (settings.isCalendarSet()) {
             mEtBeginDate.setText(mSimpleDateFormat.format(settings.getmCalendar().getTime()));
         }
-        mBtnSave.setOnClickListener(new View.OnClickListener() {
+        btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 settings.setArtsFilterOn(mCbArts.isChecked());
@@ -100,8 +106,15 @@ public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePic
                     settings.setmCalendar(mCalendar);
                     settings.setCalendarSet(true);
                 }
+                settings.setmSortOrder(mSortOrder.getSelectedItem().toString());
                 AdvSrchOptsDialogListener listener = (AdvSrchOptsDialogListener) getActivity();
                 listener.onFinishAdvSrchOptsDialog("Setting Saved!");
+                dismiss();
+            }
+        });
+        btnDismiss.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 dismiss();
             }
         });
@@ -122,5 +135,29 @@ public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePic
         mCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
         mEtBeginDate.setText(mSimpleDateFormat.format(mCalendar.getTime()));
         hasCalendarChanged=true;
+    }
+
+    @Override
+    public void onResume() {
+        // Get existing layout params for the window
+        ViewGroup.LayoutParams params = getDialog().getWindow().getAttributes();
+        // Assign window properties to fill the parent
+        params.width = WindowManager.LayoutParams.MATCH_PARENT;
+        params.height = WindowManager.LayoutParams.MATCH_PARENT;
+        getDialog().getWindow().setAttributes((android.view.WindowManager.LayoutParams) params);
+        // Call super onResume after sizing
+
+        super.onResume();
+    }
+    public void setSpinner() {
+        int index = 0;
+        SpinnerAdapter adapter = mSortOrder.getAdapter();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            if (adapter.getItem(i).equals(settings.getmSortOrder())) {
+                index = i;
+                break; // terminate loop
+            }
+        }
+        mSortOrder.setSelection(index);
     }
 }

@@ -137,6 +137,16 @@ public class SearchActivity extends AppCompatActivity implements AdvSrchOptsDial
                         try {
                             int currentSize = adapter.getItemCount();
                             Log.d("CurrentSize", String.format("%d", currentSize));
+                            if (page == 0) {
+                                int hits = response.getJSONObject("response").getJSONObject("meta").getInt("hits") / 10;
+                                if (hits < maxPages) {
+                                    maxPages = hits;
+                                    Log.d("hits", String.format("%d", hits));
+                                    if (hits < 2) {
+                                        Toast.makeText(SearchActivity.this, "No more results to display", Toast.LENGTH_LONG).show();
+                                    }
+                                }
+                            }
                             articleJsonResults = response.getJSONObject("response").getJSONArray("docs");
                             Log.d("added: ", String.format("%d", articleJsonResults.length()));
                             articles.addAll(Article.fromJSONArray(articleJsonResults));
@@ -153,6 +163,8 @@ public class SearchActivity extends AppCompatActivity implements AdvSrchOptsDial
                         Log.d("DEBUG: ", errorResponse.toString());
                     }
                 });
+            } else {
+                Toast.makeText(SearchActivity.this, "No more results to display", Toast.LENGTH_LONG).show();
             }
         }
     };
