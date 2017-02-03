@@ -179,6 +179,7 @@ public class SearchActivity extends AppCompatActivity implements AdvSrchOptsDial
                 scrollListener.resetState();
                 currentQuery = query;
                 page = 0;
+                maxPages = 100;
                 handler.postDelayed(loadDataFromApi, 150);
                 return true;
             }
