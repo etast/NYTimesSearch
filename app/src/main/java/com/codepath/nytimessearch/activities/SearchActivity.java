@@ -3,6 +3,7 @@ package com.codepath.nytimessearch.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -13,12 +14,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.codepath.nytimessearch.EndlessRecyclerViewScrollListener;
 import com.codepath.nytimessearch.ItemClickSupport;
 import com.codepath.nytimessearch.R;
 import com.codepath.nytimessearch.adapter.ArticleAdapter;
+import com.codepath.nytimessearch.fragments.AdvSrchOptsDialogFragment;
 import com.codepath.nytimessearch.model.Article;
+import com.codepath.nytimessearch.model.SearchSettings;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -30,8 +34,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.util.TextUtils;
 
-public class SearchActivity extends AppCompatActivity {
+public class SearchActivity extends AppCompatActivity implements AdvSrchOptsDialogFragment.AdvSrchOptsDialogListener {
     RecyclerView rvResults;
 
     ArrayList<Article> articles;
@@ -42,7 +47,9 @@ public class SearchActivity extends AppCompatActivity {
     final String URL = "https://api.nytimes.com/svc/search/v2/articlesearch.json";
     private EndlessRecyclerViewScrollListener scrollListener;
     private Integer page = 0;
+    private Integer maxPages = 100;
     private String currentQuery;
+    private SearchSettings searchSettings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +59,7 @@ public class SearchActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         handler = new Handler();
         client = new AsyncHttpClient();
+        searchSettings = new SearchSettings();
         setupViews();
     }
 
@@ -62,6 +70,7 @@ public class SearchActivity extends AppCompatActivity {
         rvResults.setAdapter(adapter);
         StaggeredGridLayoutManager gridLayoutManager =
                 new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);
+        gridLayoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
         rvResults.setLayoutManager(gridLayoutManager);
         scrollListener = new EndlessRecyclerViewScrollListener(gridLayoutManager) {
             @Override
@@ -80,50 +89,71 @@ public class SearchActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
-        /*
-        rvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
-                Article article = articles.get(position);
-                i.putExtra("article", article);
-                startActivity(i);
-            }
-        });
-        */
     }
     public Runnable loadDataFromApi = new Runnable() {
         @Override
         public void run() {
             Log.d("page: ", page.toString());
             Log.d("currentQuery: ", currentQuery);
-            RequestParams params = new RequestParams();
-            params.put("api-key", "ab9c232decde4a36a49426f2bdcd4c16");
-            params.put("page", page.toString());
-            params.put("q", currentQuery);
-            client.get(URL, params, new JsonHttpResponseHandler() {
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                    JSONArray articleJsonResults = null;
-                    try {
-                        int currentSize = adapter.getItemCount();
-                        Log.d("CurrentSize", String.format("%d", currentSize));
-                        articleJsonResults = response.getJSONObject("response").getJSONArray("docs");
-                        Log.d("added: ", String.format("%d", articleJsonResults.length()));
-                        articles.addAll(Article.fromJSONArray(articleJsonResults));
-                        adapter.notifyItemRangeInserted(currentSize, articles.size() - 1);
-                        page++;
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+            Log.d("maxPages: ", maxPages.toString());
+            if (page < maxPages) {
+                RequestParams params = new RequestParams();
+                params.put("api-key", "ab9c232decde4a36a49426f2bdcd4c16");
+                params.put("page", page.toString());
+                params.put("q", currentQuery);
+
+                if (!TextUtils.isEmpty(searchSettings.getmSortOrder())) {
+                    params.put("sort", searchSettings.getmSortOrder().toLowerCase());
                 }
 
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                    Log.d("StatusCode: ", String.format("%d", statusCode));
-                    Log.d("DEBUG: ", errorResponse.toString());
+                if (searchSettings.isCalendarSet()) {
+                    params.put("begin_date", searchSettings.getSearchDate());
                 }
-            });
+                ArrayList newsDesk = new ArrayList();
+                // StringBuilder newsDesk = new StringBuilder();
+
+                if (searchSettings.isArtsFilterOn()) {
+                    newsDesk.add("\"Arts\"");
+                }
+
+                if (searchSettings.isSportsFilterOn()) {
+                    newsDesk.add("\"Sports\"");
+                }
+
+                if (searchSettings.isFashionFilterOn()) {
+                    newsDesk.add("\"Fashion & Style\"");
+                }
+
+                if (newsDesk.size() > 0) {
+                    params.put("fq", "news_desk:(" + android.text.TextUtils.join(" ", newsDesk) +")");
+                    Log.d("fq=", "news_desk:(" + android.text.TextUtils.join(" ", newsDesk) +")");
+                }
+                Log.d("params", params.toString());
+
+                client.get(URL, params, new JsonHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                        JSONArray articleJsonResults = null;
+                        try {
+                            int currentSize = adapter.getItemCount();
+                            Log.d("CurrentSize", String.format("%d", currentSize));
+                            articleJsonResults = response.getJSONObject("response").getJSONArray("docs");
+                            Log.d("added: ", String.format("%d", articleJsonResults.length()));
+                            articles.addAll(Article.fromJSONArray(articleJsonResults));
+                            adapter.notifyItemRangeInserted(currentSize, articles.size() - 1);
+                            page++;
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                        Log.d("StatusCode: ", String.format("%d", statusCode));
+                        Log.d("DEBUG: ", errorResponse.toString());
+                    }
+                });
+            }
         }
     };
 
@@ -164,9 +194,16 @@ public class SearchActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            FragmentManager fm = getSupportFragmentManager();
+            AdvSrchOptsDialogFragment advSrchOptsDialogFragment = AdvSrchOptsDialogFragment.newInstance(searchSettings);
+            advSrchOptsDialogFragment.show(fm, "frag_adv_srch_tops");
             return true;
         }
         return true;
-//        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onFinishAdvSrchOptsDialog(String inputText) {
+        Toast.makeText(this, inputText, Toast.LENGTH_SHORT).show();
     }
 }

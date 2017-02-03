@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by etast on 1/30/17.
@@ -35,7 +36,7 @@ public class Article implements Serializable {
             mWebUrl = articleJson.getString("web_url");
             JSONArray multimedia = articleJson.getJSONArray("multimedia");
             if (multimedia != null && multimedia.length() > 0) {
-                JSONObject multimediaFirst = multimedia.getJSONObject(0);
+                JSONObject multimediaFirst = multimedia.getJSONObject(new Random().nextInt(multimedia.length()));
                 mThumbnail = "http://www.nytimes.com/" + multimediaFirst.optString("url");
             } else {
                 mThumbnail = "";
