@@ -87,37 +87,24 @@ public class AdvSrchOptsDialogFragment extends DialogFragment implements DatePic
         if (settings.isSportsFilterOn()) {
             mCbSports.setChecked(true);
         }
-        mEtBeginDate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showDatePickerDialog(v);
-            }
-        });
+        mEtBeginDate.setOnClickListener(v -> showDatePickerDialog(v));
         if (settings.isCalendarSet()) {
             mEtBeginDate.setText(mSimpleDateFormat.format(settings.getmCalendar().getTime()));
         }
-        btnSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                settings.setArtsFilterOn(mCbArts.isChecked());
-                settings.setFashionFilterOn(mCbFashion.isChecked());
-                settings.setSportsFilterOn(mCbSports.isChecked());
-                if (hasCalendarChanged) {
-                    settings.setmCalendar(mCalendar);
-                    settings.setCalendarSet(true);
-                }
-                settings.setmSortOrder(mSortOrder.getSelectedItem().toString());
-                AdvSrchOptsDialogListener listener = (AdvSrchOptsDialogListener) getActivity();
-                listener.onFinishAdvSrchOptsDialog("Setting Saved!");
-                dismiss();
+        btnSave.setOnClickListener(v -> {
+            settings.setArtsFilterOn(mCbArts.isChecked());
+            settings.setFashionFilterOn(mCbFashion.isChecked());
+            settings.setSportsFilterOn(mCbSports.isChecked());
+            if (hasCalendarChanged) {
+                settings.setmCalendar(mCalendar);
+                settings.setCalendarSet(true);
             }
+            settings.setmSortOrder(mSortOrder.getSelectedItem().toString());
+            AdvSrchOptsDialogListener listener = (AdvSrchOptsDialogListener) getActivity();
+            listener.onFinishAdvSrchOptsDialog("Setting Saved!");
+            dismiss();
         });
-        btnDismiss.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dismiss();
-            }
-        });
+        btnDismiss.setOnClickListener(v -> dismiss());
     }
 
     // attach to an onclick handler to show the date picker

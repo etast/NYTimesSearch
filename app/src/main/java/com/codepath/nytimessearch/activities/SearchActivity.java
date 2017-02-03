@@ -13,7 +13,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
 import com.codepath.nytimessearch.EndlessRecyclerViewScrollListener;
@@ -80,14 +79,11 @@ public class SearchActivity extends AppCompatActivity implements AdvSrchOptsDial
             }
         };
         rvResults.addOnScrollListener(scrollListener);
-        ItemClickSupport.addTo(rvResults).setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
-            @Override
-            public void onItemClicked(RecyclerView recyclerView, int position, View v) {
-                Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
-                Article article = articles.get(position);
-                i.putExtra("article", article);
-                startActivity(i);
-            }
+        ItemClickSupport.addTo(rvResults).setOnItemClickListener((recyclerView, position, v) -> {
+            Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
+            Article article = articles.get(position);
+            i.putExtra("article", article);
+            startActivity(i);
         });
     }
     public Runnable loadDataFromApi = new Runnable() {
@@ -109,8 +105,7 @@ public class SearchActivity extends AppCompatActivity implements AdvSrchOptsDial
                 if (searchSettings.isCalendarSet()) {
                     params.put("begin_date", searchSettings.getSearchDate());
                 }
-                ArrayList newsDesk = new ArrayList();
-                // StringBuilder newsDesk = new StringBuilder();
+                ArrayList<String> newsDesk = new ArrayList<String>();
 
                 if (searchSettings.isArtsFilterOn()) {
                     newsDesk.add("\"Arts\"");
